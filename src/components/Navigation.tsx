@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Scan, Menu, Settings } from "lucide-react";
+import { Menu } from "lucide-react";
 
 export const Navigation = () => {
   return (
@@ -7,11 +7,12 @@ export const Navigation = () => {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <Scan className="w-4 h-4 text-white" />
-            </div>
-            <span className="text-lg font-bold">ScanSpace</span>
+          <div className="flex items-center gap-3">
+            <img 
+              src="/lovable-uploads/c5371531-18e2-4b4c-a32a-ac1c4df98881.png" 
+              alt="Pinnacle Master Renovations" 
+              className="h-10 w-auto"
+            />
           </div>
 
           {/* Desktop Navigation */}
