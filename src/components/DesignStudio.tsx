@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { RoomViewer3D } from "./RoomViewer3D";
 import { 
   Scan, 
@@ -16,8 +14,6 @@ import {
 } from "lucide-react";
 
 export const DesignStudio = () => {
-  const [activeProject, setActiveProject] = useState("living-room");
-  
   return (
     <section className="py-20 bg-surface">
       <div className="container mx-auto px-6">
@@ -37,30 +33,6 @@ export const DesignStudio = () => {
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            {/* Project Info */}
-            <Card>
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">Current Project</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Name</span>
-                  <Badge variant="secondary">Living Room</Badge>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Dimensions</span>
-                  <span className="text-sm font-medium">4.5m × 6.2m</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Status</span>
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 bg-success rounded-full" />
-                    <span className="text-sm">Active</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Tools */}
             <Card>
               <CardHeader className="pb-3">
