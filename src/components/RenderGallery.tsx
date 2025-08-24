@@ -18,7 +18,7 @@ interface RenderedImage {
   id: string;
   url: string;
   thumbnail: string;
-  type: 'exterior' | 'design-integration';
+  type: 'exterior' | 'design-integration' | 'deck-rendering';
   createdAt: string;
   originalImages: string[];
   prompt?: string;
@@ -90,6 +90,8 @@ export const RenderGallery = ({ renders, onDelete }: RenderGalleryProps) => {
         return 'Exterior Render';
       case 'design-integration':
         return 'Design Integration';
+      case 'deck-rendering':
+        return 'Deck Addition';
       default:
         return 'Render';
     }

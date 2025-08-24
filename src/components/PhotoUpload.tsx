@@ -25,7 +25,7 @@ interface UploadedFile {
 }
 
 interface PhotoUploadProps {
-  type: 'exterior' | 'design-ideas';
+  type: 'exterior' | 'design-ideas' | 'decks';
   maxFiles: number;
   onRenderComplete?: (renderedImages: string[]) => void;
 }
@@ -122,7 +122,8 @@ export const PhotoUpload = ({ type, maxFiles, onRenderComplete }: PhotoUploadPro
         body: JSON.stringify({
           mediaUrls: uploadedUrls,
           type,
-          processType: type === 'exterior' ? 'exterior-rendering' : 'design-integration'
+          processType: type === 'exterior' ? 'exterior-rendering' : 
+                      type === 'decks' ? 'deck-rendering' : 'design-integration'
         })
       });
 
@@ -147,6 +148,8 @@ export const PhotoUpload = ({ type, maxFiles, onRenderComplete }: PhotoUploadPro
         return 'Exterior Photos';
       case 'design-ideas':
         return 'Design Ideas';
+      case 'decks':
+        return 'Deck Photos';
       default:
         return 'Upload Media';
     }
@@ -158,6 +161,8 @@ export const PhotoUpload = ({ type, maxFiles, onRenderComplete }: PhotoUploadPro
         return `Upload up to ${maxFiles} photos of your home's exterior for AI rendering`;
       case 'design-ideas':
         return 'Upload photos/videos of design ideas to integrate into your space';
+      case 'decks':
+        return `Upload photos of your house to add custom decks and outdoor spaces`;
       default:
         return 'Upload your media files';
     }
@@ -277,7 +282,8 @@ export const PhotoUpload = ({ type, maxFiles, onRenderComplete }: PhotoUploadPro
               ) : (
                 <Wand2 className="w-4 h-4 mr-2" />
               )}
-              {type === 'exterior' ? 'Generate Rendering' : 'Integrate Design'}
+              {type === 'exterior' ? 'Generate Rendering' : 
+               type === 'decks' ? 'Add Decks' : 'Integrate Design'}
             </Button>
           </div>
         )}

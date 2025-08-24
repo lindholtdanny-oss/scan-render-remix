@@ -15,14 +15,15 @@ import {
   Palette,
   Ruler,
   Camera,
-  Lightbulb
+  Lightbulb,
+  Building2
 } from "lucide-react";
 
 interface RenderedImage {
   id: string;
   url: string;
   thumbnail: string;
-  type: 'exterior' | 'design-integration';
+  type: 'exterior' | 'design-integration' | 'deck-rendering';
   createdAt: string;
   originalImages: string[];
   prompt?: string;
@@ -99,6 +100,10 @@ export const DesignStudio = () => {
                   Design Ideas  
                 </Button>
                 <Button variant="ghost" size="sm" className="w-full justify-start">
+                  <Building2 className="w-4 h-4 mr-2" />
+                  Add Decks
+                </Button>
+                <Button variant="ghost" size="sm" className="w-full justify-start">
                   <Layers className="w-4 h-4 mr-2" />
                   Layers
                 </Button>
@@ -138,10 +143,11 @@ export const DesignStudio = () => {
           {/* Main Viewer */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="3d" className="w-full">
-              <TabsList className="grid w-full grid-cols-5">
+              <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="3d">3D View</TabsTrigger>
                 <TabsTrigger value="exterior">Exterior</TabsTrigger>
                 <TabsTrigger value="design">Design Ideas</TabsTrigger>
+                <TabsTrigger value="decks">Add Decks</TabsTrigger>
                 <TabsTrigger value="2d">Floor Plan</TabsTrigger>
                 <TabsTrigger value="render">Gallery</TabsTrigger>
               </TabsList>
@@ -167,6 +173,16 @@ export const DesignStudio = () => {
                   <PhotoUpload 
                     type="design-ideas" 
                     maxFiles={10} 
+                    onRenderComplete={handleRenderComplete}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="decks" className="mt-4">
+                <div className="max-h-[600px] overflow-y-auto">
+                  <PhotoUpload 
+                    type="decks" 
+                    maxFiles={6} 
                     onRenderComplete={handleRenderComplete}
                   />
                 </div>

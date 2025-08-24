@@ -9,8 +9,8 @@ const corsHeaders = {
 
 interface ProcessRequest {
   mediaUrls: string[]
-  type: 'exterior' | 'design-ideas'
-  processType: 'exterior-rendering' | 'design-integration'
+  type: 'exterior' | 'design-ideas' | 'decks'
+  processType: 'exterior-rendering' | 'design-integration' | 'deck-rendering'
 }
 
 serve(async (req) => {
@@ -65,6 +65,9 @@ serve(async (req) => {
     } else if (processType === 'design-integration') {
       prompt = `Integrate these design elements and ideas into a cohesive interior space. Blend the uploaded design concepts with the existing room layout. Create a harmonious, stylish interior that incorporates the design themes from the reference images. Style: Interior design photography, professional lighting, realistic materials and textures.`
       renderedImages = await integrateDesignIdeas(mediaUrls, prompt)
+    } else if (processType === 'deck-rendering') {
+      prompt = `Add beautiful outdoor decks and patios to this house exterior. Based on the uploaded house photos, design and render custom deck additions that complement the architectural style. Include railings, outdoor furniture, and landscaping. Style: Professional architectural visualization, realistic materials, natural lighting.`
+      renderedImages = await generateDeckRendering(mediaUrls, prompt)
     }
 
     // Update job with results
@@ -165,6 +168,28 @@ async function integrateDesignIdeas(mediaUrls: string[], prompt: string): Promis
     return renderedImages
   } catch (error) {
     console.error('Design integration error:', error)
+    return []
+  }
+}
+
+async function generateDeckRendering(mediaUrls: string[], prompt: string): Promise<string[]> {
+  try {
+    // This would integrate with AI services for deck/patio design
+    // - Analyze house exterior photos
+    // - Generate custom deck designs that fit the architecture
+    // - Add railings, furniture, and landscaping
+    
+    await new Promise(resolve => setTimeout(resolve, 3500))
+    
+    // Mock rendered images (replace with actual AI service calls)
+    const renderedImages = [
+      'https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1600607687644-aac4c3eac7f4?w=800&h=600&fit=crop'
+    ]
+    
+    return renderedImages
+  } catch (error) {
+    console.error('Deck rendering error:', error)
     return []
   }
 }
