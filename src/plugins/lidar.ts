@@ -15,6 +15,26 @@ export interface LiDARPlugin {
       height: number;
       depth: number;
     };
+    walls: number[][][];
+    furniture: {
+      id: string;
+      type: string;
+      position: number[];
+      dimensions: number[];
+      confidence: number;
+    }[];
+    roomLayout: {
+      floorPlan: {
+        id: string;
+        points: number[][];
+        length: number;
+        type: string;
+      }[];
+      roomType: string;
+      totalArea: number;
+      wallCount: number;
+      furnitureCount: number;
+    };
     status: string;
   }>;
   

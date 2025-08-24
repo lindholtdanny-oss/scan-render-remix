@@ -6,6 +6,7 @@ import { Scan, Camera, Download, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Capacitor } from '@capacitor/core';
 import LiDAR from '@/plugins/lidar';
+import { RoomLayout } from './RoomLayout';
 
 interface LiDARData {
   points: Float32Array;
@@ -18,6 +19,26 @@ interface LiDARData {
       height: number;
       depth: number;
     };
+  };
+  walls?: number[][][];
+  furniture?: {
+    id: string;
+    type: string;
+    position: number[];
+    dimensions: number[];
+    confidence: number;
+  }[];
+  roomLayout?: {
+    floorPlan: {
+      id: string;
+      points: number[][];
+      length: number;
+      type: string;
+    }[];
+    roomType: string;
+    totalArea: number;
+    wallCount: number;
+    furnitureCount: number;
   };
 }
 
@@ -115,7 +136,10 @@ export const LiDARScanner = () => {
           pointCount: result.pointCount,
           scanTime: result.scanTime,
           roomDimensions: result.roomDimensions
-        }
+        },
+        walls: result.walls,
+        furniture: result.furniture,
+        roomLayout: result.roomLayout
       };
     } catch (error) {
       console.error('Native LiDAR scan failed:', error);
@@ -281,6 +305,13 @@ export const LiDARScanner = () => {
                     className="border border-border rounded-lg bg-background"
                   />
                 </div>
+                
+                {scanData.roomLayout && scanData.furniture && (
+                  <RoomLayout 
+                    roomLayout={scanData.roomLayout} 
+                    furniture={scanData.furniture}
+                  />
+                )}
               </div>
             )}
           </>
