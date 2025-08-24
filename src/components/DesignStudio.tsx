@@ -1,7 +1,10 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoomViewer3D } from "./RoomViewer3D";
+import { PhotoUpload } from "./PhotoUpload";
+import { RenderGallery } from "./RenderGallery";
 import { 
   Scan, 
   Box, 
@@ -10,10 +13,54 @@ import {
   Settings,
   Layers,
   Palette,
-  Ruler
+  Ruler,
+  Camera,
+  Lightbulb
 } from "lucide-react";
 
+interface RenderedImage {
+  id: string;
+  url: string;
+  thumbnail: string;
+  type: 'exterior' | 'design-integration';
+  createdAt: string;
+  originalImages: string[];
+  prompt?: string;
+  status: 'processing' | 'completed' | 'failed';
+}
+
 export const DesignStudio = () => {
+  const [renderedImages, setRenderedImages] = useState<RenderedImage[]>([
+    {
+      id: '1',
+      url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=800&h=600&fit=crop',
+      thumbnail: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop',
+      type: 'exterior',
+      createdAt: new Date().toISOString(),
+      originalImages: [],
+      prompt: 'Modern home exterior with enhanced landscaping',
+      status: 'completed'
+    }
+  ]);
+
+  const handleRenderComplete = (newImages: string[]) => {
+    const newRenders: RenderedImage[] = newImages.map((url, index) => ({
+      id: `${Date.now()}-${index}`,
+      url,
+      thumbnail: url,
+      type: 'design-integration',
+      createdAt: new Date().toISOString(),
+      originalImages: [],
+      prompt: 'AI-generated design integration',
+      status: 'completed'
+    }));
+    setRenderedImages(prev => [...prev, ...newRenders]);
+  };
+
+  const handleDeleteRender = (id: string) => {
+    setRenderedImages(prev => prev.filter(r => r.id !== id));
+  };
+
   return (
     <section className="py-20 bg-surface">
       <div className="container mx-auto px-6">
@@ -42,6 +89,14 @@ export const DesignStudio = () => {
                 <Button variant="secondary" size="sm" className="w-full justify-start">
                   <Scan className="w-4 h-4 mr-2" />
                   Scan Room
+                </Button>
+                <Button variant="ghost" size="sm" className="w-full justify-start">
+                  <Camera className="w-4 h-4 mr-2" />
+                  Exterior Photos
+                </Button>
+                <Button variant="ghost" size="sm" className="w-full justify-start">
+                  <Lightbulb className="w-4 h-4 mr-2" />
+                  Design Ideas  
                 </Button>
                 <Button variant="ghost" size="sm" className="w-full justify-start">
                   <Layers className="w-4 h-4 mr-2" />
@@ -83,15 +138,37 @@ export const DesignStudio = () => {
           {/* Main Viewer */}
           <div className="lg:col-span-3">
             <Tabs defaultValue="3d" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="3d">3D View</TabsTrigger>
+                <TabsTrigger value="exterior">Exterior</TabsTrigger>
+                <TabsTrigger value="design">Design Ideas</TabsTrigger>
                 <TabsTrigger value="2d">Floor Plan</TabsTrigger>
-                <TabsTrigger value="render">Renders</TabsTrigger>
+                <TabsTrigger value="render">Gallery</TabsTrigger>
               </TabsList>
               
               <TabsContent value="3d" className="mt-4">
                 <div className="h-[600px]">
                   <RoomViewer3D />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="exterior" className="mt-4">
+                <div className="max-h-[600px] overflow-y-auto">
+                  <PhotoUpload 
+                    type="exterior" 
+                    maxFiles={8} 
+                    onRenderComplete={handleRenderComplete}
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="design" className="mt-4">
+                <div className="max-h-[600px] overflow-y-auto">
+                  <PhotoUpload 
+                    type="design-ideas" 
+                    maxFiles={10} 
+                    onRenderComplete={handleRenderComplete}
+                  />
                 </div>
               </TabsContent>
               
@@ -106,12 +183,11 @@ export const DesignStudio = () => {
               </TabsContent>
               
               <TabsContent value="render" className="mt-4">
-                <div className="h-[600px] bg-surface-elevated rounded-lg border flex items-center justify-center">
-                  <div className="text-center">
-                    <Image className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-medium mb-2">Rendered Images</h3>
-                    <p className="text-muted-foreground">4K renders will appear here</p>
-                  </div>
+                <div className="max-h-[600px] overflow-y-auto">
+                  <RenderGallery 
+                    renders={renderedImages} 
+                    onDelete={handleDeleteRender}
+                  />
                 </div>
               </TabsContent>
             </Tabs>
