@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RoomViewer3D } from "./RoomViewer3D";
 import { PhotoUpload } from "./PhotoUpload";
 import { RenderGallery } from "./RenderGallery";
+import { LiDARScanner } from "./LiDARScanner";
 import { 
   Scan, 
   Box, 
@@ -142,9 +143,9 @@ export const DesignStudio = () => {
 
           {/* Main Viewer */}
           <div className="lg:col-span-3">
-            <Tabs defaultValue="3d" className="w-full">
+            <Tabs defaultValue="lidar" className="w-full">
               <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="3d">3D View</TabsTrigger>
+                <TabsTrigger value="lidar">Room Scan</TabsTrigger>
                 <TabsTrigger value="exterior">Exterior</TabsTrigger>
                 <TabsTrigger value="design">Design Ideas</TabsTrigger>
                 <TabsTrigger value="decks">Add Decks</TabsTrigger>
@@ -152,9 +153,9 @@ export const DesignStudio = () => {
                 <TabsTrigger value="render">Gallery</TabsTrigger>
               </TabsList>
               
-              <TabsContent value="3d" className="mt-4">
-                <div className="h-[600px]">
-                  <RoomViewer3D />
+              <TabsContent value="lidar" className="mt-4">
+                <div className="h-[600px] overflow-y-auto">
+                  <LiDARScanner />
                 </div>
               </TabsContent>
 
