@@ -168,16 +168,41 @@ export const LiDARScanner = () => {
   };
 
   const startCameraPreview = async () => {
-    if (!cameraRef.current) return;
+    if (!cameraRef.current) {
+      console.error('Camera ref not available');
+      return;
+    }
     
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
+      console.log('Requesting camera access...');
+      const constraints = {
+        video: {
+          facingMode: 'environment',
+          width: { ideal: 1920 },
+          height: { ideal: 1080 }
+        }
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+      console.log('Camera stream obtained:', stream);
+      
       cameraRef.current.srcObject = stream;
-      cameraRef.current.play();
+      
+      // Ensure video plays
+      cameraRef.current.onloadedmetadata = () => {
+        console.log('Video metadata loaded, starting playback');
+        cameraRef.current?.play().catch(err => {
+          console.error('Failed to play video:', err);
+        });
+      };
+      
+      await cameraRef.current.play();
+      console.log('Camera preview started successfully');
+      toast.success("Camera preview started");
+      
     } catch (error) {
       console.error('Failed to start camera:', error);
+      toast.error("Failed to access camera. Please check permissions.");
     }
   };
 
@@ -456,17 +481,18 @@ export const LiDARScanner = () => {
             {isScanning && (
               <div className="space-y-4">
                 <h4 className="font-medium">Live Room Scanning</h4>
-                <div className="relative bg-black rounded-lg overflow-hidden">
+                <div className="relative bg-black rounded-lg overflow-hidden aspect-video">
                   <video
                     ref={cameraRef}
-                    className="w-full h-64 object-cover"
+                    className="w-full h-full object-cover"
                     autoPlay
                     muted
                     playsInline
+                    style={{ minHeight: '200px' }}
                   />
                   <canvas
                     ref={liveCanvasRef}
-                    className="absolute inset-0 w-full h-full"
+                    className="absolute inset-0 w-full h-full pointer-events-none"
                     width={400}
                     height={256}
                   />
@@ -479,6 +505,9 @@ export const LiDARScanner = () => {
                   <div className="absolute bottom-2 left-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
                     <div className="text-green-400">■ Walls</div>
                     <div className="text-blue-400">■ Furniture</div>
+                  </div>
+                  <div className="absolute top-2 right-2 bg-black/70 text-white px-2 py-1 rounded text-xs">
+                    {cameraRef.current?.srcObject ? 'Camera Active' : 'Camera Loading...'}
                   </div>
                 </div>
                 
