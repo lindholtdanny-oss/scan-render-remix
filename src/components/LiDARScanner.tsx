@@ -42,7 +42,11 @@ interface LiDARData {
   };
 }
 
-export const LiDARScanner = () => {
+interface LiDARScannerProps {
+  onScanComplete?: (scanData: LiDARData) => void;
+}
+
+export const LiDARScanner = ({ onScanComplete }: LiDARScannerProps = {}) => {
   const [isScanning, setIsScanning] = useState(false);
   const [scanData, setScanData] = useState<LiDARData | null>(null);
   const [isSupported, setIsSupported] = useState(false);
@@ -150,12 +154,18 @@ export const LiDARScanner = () => {
     try {
       const result = await LiDAR.stopScan();
       if (result.status === 'success' && realTimeData) {
-        setScanData(realTimeData as LiDARData);
+        const finalScanData = realTimeData as LiDARData;
+        setScanData(finalScanData);
         toast.success("Room scan completed successfully!");
         
         // Visualize the final point cloud
-        if (canvasRef.current && realTimeData) {
-          visualizePointCloud(realTimeData as LiDARData);
+        if (canvasRef.current && finalScanData) {
+          visualizePointCloud(finalScanData);
+        }
+        
+        // Notify parent component
+        if (onScanComplete) {
+          onScanComplete(finalScanData);
         }
       }
     } catch (error) {

@@ -23,6 +23,9 @@ export const Navigation = () => {
             <a href="#demo" className="text-sm font-medium hover:text-primary transition-colors">
               Demo
             </a>
+            <a href="/projects" className="text-sm font-medium hover:text-primary transition-colors">
+              Projects
+            </a>
             <a href="#pricing" className="text-sm font-medium hover:text-primary transition-colors">
               Pricing
             </a>
