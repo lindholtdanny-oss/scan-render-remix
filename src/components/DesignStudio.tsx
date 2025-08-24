@@ -45,15 +45,18 @@ export const DesignStudio = () => {
     }
   ]);
 
-  const handleRenderComplete = (newImages: string[]) => {
+  const handleRenderComplete = (newImages: string[], type: 'exterior' | 'design-ideas' | 'decks') => {
+    const renderType = type === 'design-ideas' ? 'design-integration' : 
+                      type === 'decks' ? 'deck-rendering' : 'exterior';
+    
     const newRenders: RenderedImage[] = newImages.map((url, index) => ({
       id: `${Date.now()}-${index}`,
       url,
       thumbnail: url,
-      type: 'design-integration',
+      type: renderType,
       createdAt: new Date().toISOString(),
       originalImages: [],
-      prompt: 'AI-generated design integration',
+      prompt: `AI-generated ${renderType} render`,
       status: 'completed'
     }));
     setRenderedImages(prev => [...prev, ...newRenders]);
@@ -164,7 +167,7 @@ export const DesignStudio = () => {
                   <PhotoUpload 
                     type="exterior" 
                     maxFiles={8} 
-                    onRenderComplete={handleRenderComplete}
+                    onRenderComplete={(images, type) => handleRenderComplete(images, type)}
                   />
                 </div>
               </TabsContent>
@@ -174,7 +177,7 @@ export const DesignStudio = () => {
                   <PhotoUpload 
                     type="design-ideas" 
                     maxFiles={10} 
-                    onRenderComplete={handleRenderComplete}
+                    onRenderComplete={(images, type) => handleRenderComplete(images, type)}
                   />
                 </div>
               </TabsContent>
@@ -184,7 +187,7 @@ export const DesignStudio = () => {
                   <PhotoUpload 
                     type="decks" 
                     maxFiles={6} 
-                    onRenderComplete={handleRenderComplete}
+                    onRenderComplete={(images, type) => handleRenderComplete(images, type)}
                   />
                 </div>
               </TabsContent>

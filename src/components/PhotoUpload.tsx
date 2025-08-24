@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { uploadFileToStorage, callEdgeFunction } from "@/lib/supabase";
 import { 
   Upload, 
   Camera, 
@@ -27,7 +28,7 @@ interface UploadedFile {
 interface PhotoUploadProps {
   type: 'exterior' | 'design-ideas' | 'decks';
   maxFiles: number;
-  onRenderComplete?: (renderedImages: string[]) => void;
+  onRenderComplete?: (renderedImages: string[], type: 'exterior' | 'design-ideas' | 'decks') => void;
 }
 
 export const PhotoUpload = ({ type, maxFiles, onRenderComplete }: PhotoUploadProps) => {
@@ -65,18 +66,7 @@ export const PhotoUpload = ({ type, maxFiles, onRenderComplete }: PhotoUploadPro
     setUploadProgress(0);
     const uploadPromises = files.map(async (fileData, index) => {
       try {
-        const formData = new FormData();
-        formData.append('file', fileData.file);
-        formData.append('type', type);
-
-        const response = await fetch('/api/upload-media', {
-          method: 'POST',
-          body: formData
-        });
-
-        if (!response.ok) throw new Error('Upload failed');
-
-        const result = await response.json();
+        const result = await uploadFileToStorage(fileData.file);
         
         setFiles(prev => prev.map(f => 
           f.id === fileData.id 
@@ -85,7 +75,7 @@ export const PhotoUpload = ({ type, maxFiles, onRenderComplete }: PhotoUploadPro
         ));
 
         setUploadProgress((index + 1) / files.length * 100);
-        return result.url;
+        return result.publicUrl;
       } catch (error) {
         console.error('Upload error:', error);
         toast.error(`Failed to upload ${fileData.file.name}`);
@@ -116,23 +106,14 @@ export const PhotoUpload = ({ type, maxFiles, onRenderComplete }: PhotoUploadPro
         throw new Error('No files uploaded successfully');
       }
 
-      const response = await fetch('/api/process-media', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mediaUrls: uploadedUrls,
-          type,
-          processType: type === 'exterior' ? 'exterior-rendering' : 
-                      type === 'decks' ? 'deck-rendering' : 'design-integration'
-        })
+      const result = await callEdgeFunction('process-media', {
+        mediaUrls: uploadedUrls,
+        processType: type === 'exterior' ? 'exterior-rendering' : 
+                    type === 'decks' ? 'deck-rendering' : 'design-integration'
       });
-
-      if (!response.ok) throw new Error('AI processing failed');
-
-      const result = await response.json();
       
       toast.success('AI rendering completed!');
-      onRenderComplete?.(result.renderedImages);
+      onRenderComplete?.(result.renderedImages, type);
 
     } catch (error) {
       console.error('Processing error:', error);
