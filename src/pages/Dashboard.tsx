@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { LiDARScanner } from "@/components/LiDARScanner";
 import { RoomViewer3D } from "@/components/RoomViewer3D";

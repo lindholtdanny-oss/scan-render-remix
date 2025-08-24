@@ -1,6 +1,6 @@
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, PerspectiveCamera, Box, Plane } from "@react-three/drei";
-import { useRef, useState, useCallback } from "react";
+import React, { useRef, useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Move3D, RotateCcw, ZoomIn, ZoomOut, Trash2, RotateCw } from "lucide-react";
 import { ObjectLibrary, ObjectDefinition } from "./ObjectLibrary";
