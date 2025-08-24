@@ -11,6 +11,8 @@ public class LiDARPlugin: CAPPlugin {
     private var pointCloud: [SIMD3<Float>] = []
     private var detectedWalls: [[SIMD3<Float>]] = []
     private var detectedFurniture: [FurnitureObject] = []
+    private var currentCall: CAPPluginCall?
+    private var scanTimer: Timer?
     
     struct FurnitureObject {
         let id: String
@@ -40,30 +42,92 @@ public class LiDARPlugin: CAPPlugin {
             return
         }
         
+        self.currentCall = call
         DispatchQueue.main.async { [weak self] in
-            self?.setupARSession(call)
+            self?.setupARSession()
         }
     }
     
-    private func setupARSession(_ call: CAPPluginCall) {
+    private func setupARSession() {
         let configuration = ARWorldTrackingConfiguration()
         configuration.sceneReconstruction = .mesh
         configuration.environmentTexturing = .automatic
+        
+        // Create ARView if it doesn't exist
+        if self.arView == nil {
+            self.arView = ARView()
+        }
         
         if let arView = self.arView {
             arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
             self.isScanning = true
             
-            // Start scanning for 5 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5.0) { [weak self] in
-                self?.finishScan(call)
-            }
+            // Start real-time scanning updates
+            startRealTimeUpdates()
             
-            call.resolve([
-                "status": "scanning_started",
-                "message": "LiDAR scanning initiated"
+            // Acknowledge scan start
+            currentCall?.resolve([
+                "status": "scanning_started", 
+                "message": "Real-time LiDAR scanning initiated"
             ])
         }
+    }
+    
+    private func startRealTimeUpdates() {
+        // Send updates every 0.5 seconds
+        scanTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+            self?.sendRealTimeUpdate()
+        }
+    }
+    
+    private func sendRealTimeUpdate() {
+        guard let arView = self.arView, isScanning else { return }
+        
+        var points: [[Float]] = []
+        var roomDimensions: [String: Float] = [:]
+        var walls: [[[Float]]] = []
+        var furniture: [[String: Any]] = []
+        var roomLayout: [String: Any] = [:]
+        
+        // Extract current mesh data
+        arView.session.currentFrame?.anchors.forEach { anchor in
+            if let meshAnchor = anchor as? ARMeshAnchor {
+                let vertices = meshAnchor.geometry.vertices
+                let vertexCount = min(vertices.count, 1000) // Limit for performance
+                
+                // Extract limited point cloud for real-time updates
+                for i in stride(from: 0, to: vertexCount, by: 5) { // Sample every 5th point
+                    let vertex = vertices[i]
+                    points.append([vertex.x, vertex.y, vertex.z])
+                }
+                
+                // Calculate current room dimensions
+                let bounds = meshAnchor.geometry.extent
+                roomDimensions = [
+                    "width": bounds.x,
+                    "height": bounds.y,
+                    "depth": bounds.z
+                ]
+                
+                // Analyze current mesh state
+                let analysisResult = analyzeMeshForLayout(meshAnchor: meshAnchor)
+                walls = analysisResult.walls
+                furniture = analysisResult.furniture
+                roomLayout = analysisResult.layout
+            }
+        }
+        
+        // Send real-time update to JavaScript
+        notifyListeners("realTimeUpdate", data: [
+            "points": points,
+            "pointCount": points.count,
+            "scanTime": Date().timeIntervalSince1970 * 1000,
+            "roomDimensions": roomDimensions,
+            "walls": walls,
+            "furniture": furniture,
+            "roomLayout": roomLayout,
+            "status": "scanning"
+        ])
     }
     
     private func finishScan(_ call: CAPPluginCall) {
@@ -349,7 +413,60 @@ public class LiDARPlugin: CAPPlugin {
     
     @objc func stopScan(_ call: CAPPluginCall) {
         self.isScanning = false
-        self.arView?.session.pause()
-        call.resolve(["status": "stopped"])
+        self.scanTimer?.invalidate()
+        self.scanTimer = nil
+        
+        // Get final scan data
+        guard let arView = self.arView else {
+            call.reject("AR session not available")
+            return
+        }
+        
+        var points: [[Float]] = []
+        var roomDimensions: [String: Float] = [:]
+        var walls: [[[Float]]] = []
+        var furniture: [[String: Any]] = []
+        var roomLayout: [String: Any] = [:]
+        
+        // Extract final mesh data
+        arView.session.currentFrame?.anchors.forEach { anchor in
+            if let meshAnchor = anchor as? ARMeshAnchor {
+                let vertices = meshAnchor.geometry.vertices
+                let vertexCount = vertices.count
+                
+                // Extract complete point cloud
+                for i in 0..<vertexCount {
+                    let vertex = vertices[i]
+                    points.append([vertex.x, vertex.y, vertex.z])
+                }
+                
+                // Calculate final room dimensions
+                let bounds = meshAnchor.geometry.extent
+                roomDimensions = [
+                    "width": bounds.x,
+                    "height": bounds.y,
+                    "depth": bounds.z
+                ]
+                
+                // Final mesh analysis
+                let analysisResult = analyzeMeshForLayout(meshAnchor: meshAnchor)
+                walls = analysisResult.walls
+                furniture = analysisResult.furniture
+                roomLayout = analysisResult.layout
+            }
+        }
+        
+        arView.session.pause()
+        
+        call.resolve([
+            "points": points,
+            "pointCount": points.count,
+            "scanTime": Date().timeIntervalSince1970 * 1000,
+            "roomDimensions": roomDimensions,
+            "walls": walls,
+            "furniture": furniture,
+            "roomLayout": roomLayout,
+            "status": "success"
+        ])
     }
 }

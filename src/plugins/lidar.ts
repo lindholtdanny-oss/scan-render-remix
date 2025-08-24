@@ -39,8 +39,39 @@ export interface LiDARPlugin {
   }>;
   
   stopScan(): Promise<{
+    points: number[][];
+    pointCount: number;
+    scanTime: number;
+    roomDimensions: {
+      width: number;
+      height: number;
+      depth: number;
+    };
+    walls: number[][][];
+    furniture: {
+      id: string;
+      type: string;
+      position: number[];
+      dimensions: number[];
+      confidence: number;
+    }[];
+    roomLayout: {
+      floorPlan: {
+        id: string;
+        points: number[][];
+        length: number;
+        type: string;
+      }[];
+      roomType: string;
+      totalArea: number;
+      wallCount: number;
+      furnitureCount: number;
+    };
     status: string;
   }>;
+
+  addListener(eventName: 'realTimeUpdate', listenerFunc: (event: any) => void): Promise<{ remove: () => void }>;
+  removeAllListeners(): Promise<void>;
 }
 
 const LiDAR = registerPlugin<LiDARPlugin>('LiDARPlugin');
