@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Scan, Camera, Download, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Capacitor } from '@capacitor/core';
+import LiDAR from '@/plugins/lidar';
 
 interface LiDARData {
   points: Float32Array;
@@ -48,9 +49,13 @@ export const LiDARScanner = () => {
   }, []);
 
   const checkDeviceLiDARCapability = async (): Promise<boolean> => {
-    // This would interface with a custom Capacitor plugin
-    // For demo purposes, we'll return true if on iOS
-    return Capacitor.getPlatform() === 'ios';
+    try {
+      const result = await LiDAR.checkLiDARSupport();
+      return result.supported;
+    } catch (error) {
+      console.error('Error checking LiDAR support:', error);
+      return false;
+    }
   };
 
   const startLiDARScan = async () => {
@@ -81,43 +86,42 @@ export const LiDARScanner = () => {
   };
 
   const performLiDARScan = async (): Promise<LiDARData> => {
-    // Simulate LiDAR scanning process
-    // In a real implementation, this would call a native iOS plugin
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Generate mock point cloud data
-        const pointCount = 10000;
-        const points = new Float32Array(pointCount * 3);
-        const colors = new Uint8Array(pointCount * 3);
+    try {
+      const result = await LiDAR.startScan();
+      
+      // Convert points array to Float32Array
+      const pointCount = result.points.length;
+      const points = new Float32Array(pointCount * 3);
+      const colors = new Uint8Array(pointCount * 3);
+      
+      // Process the point cloud data from native plugin
+      result.points.forEach((point, i) => {
+        const idx = i * 3;
+        points[idx] = point[0];     // x
+        points[idx + 1] = point[1]; // y
+        points[idx + 2] = point[2]; // z
         
-        // Generate random room-like point cloud
-        for (let i = 0; i < pointCount; i++) {
-          const idx = i * 3;
-          points[idx] = (Math.random() - 0.5) * 10; // x
-          points[idx + 1] = Math.random() * 3; // y (height)
-          points[idx + 2] = (Math.random() - 0.5) * 10; // z
-          
-          // Random colors
-          colors[idx] = Math.random() * 255;
-          colors[idx + 1] = Math.random() * 255;
-          colors[idx + 2] = Math.random() * 255;
-        }
+        // Generate colors based on height for better visualization
+        const height = point[1];
+        colors[idx] = Math.min(255, Math.max(0, (height + 2) * 60));     // Red based on height
+        colors[idx + 1] = Math.min(255, Math.max(0, 150 - height * 30)); // Green inverse of height
+        colors[idx + 2] = 100; // Blue constant
+      });
 
-        resolve({
-          points,
-          colors,
-          metadata: {
-            pointCount,
-            scanTime: Date.now(),
-            roomDimensions: {
-              width: 5.2,
-              height: 2.8,
-              depth: 4.1
-            }
-          }
-        });
-      }, 3000);
-    });
+      return {
+        points,
+        colors,
+        metadata: {
+          pointCount: result.pointCount,
+          scanTime: result.scanTime,
+          roomDimensions: result.roomDimensions
+        }
+      };
+    } catch (error) {
+      console.error('Native LiDAR scan failed:', error);
+      toast.error("LiDAR scanning failed. Please try again.");
+      throw error;
+    }
   };
 
   const visualizePointCloud = (data: LiDARData) => {
