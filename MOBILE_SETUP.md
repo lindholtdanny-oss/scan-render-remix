@@ -4,54 +4,65 @@ This guide explains how to set up the mobile app to test LiDAR scanning function
 
 ## Prerequisites
 
-- iOS device with LiDAR sensor (iPhone 12 Pro or newer, iPad Pro 2020 or newer)
-- Mac with Xcode installed (for iOS development)
-- Node.js and npm installed
+- iOS device with LiDAR sensor (iPhone 12 Pro or newer, iPad Pro 2020 or newer)  
+- Mac with Xcode 14.0 or newer
+- Node.js 18.0 or newer and npm installed
+- Apple Developer Account (for device testing)
 
-## Setup Instructions
+## Quick Setup Instructions
 
 ### 1. Export to GitHub
-1. Click the "Export to GitHub" button in Lovable
-2. Clone the repository to your local machine:
+1. In Lovable, click the "GitHub" button in the top right
+2. Click "Connect to GitHub" and authorize the app
+3. Click "Create Repository" to create a new GitHub repo
+4. Clone the repository to your Mac:
    ```bash
    git clone <your-repo-url>
    cd <your-project-name>
    ```
 
-### 2. Install Dependencies
+### 2. Install Dependencies & Setup iOS
 ```bash
+# Install all dependencies
 npm install
-```
 
-### 3. Add iOS Platform
-```bash
+# Add iOS platform (creates ios/ folder)
 npx cap add ios
-```
 
-### 4. Update iOS Dependencies
-```bash
+# Build the web app
+npm run build
+
+# Sync web app with native iOS project
+npx cap sync ios
+
+# Update iOS platform dependencies
 npx cap update ios
 ```
 
-### 5. Build the Project
+### 3. Configure iOS Project in Xcode
 ```bash
-npm run build
+# Open the iOS project in Xcode
+npx cap open ios
 ```
 
-### 6. Sync with Capacitor
-```bash
-npx cap sync
-```
+In Xcode, you need to:
+1. **Set Team & Bundle ID**: Select your project → Signing & Capabilities → Select your Apple Developer Team
+2. **Set Deployment Target**: Set to iOS 14.0 or higher for LiDAR support
+3. **Verify Permissions**: Check that camera and ARKit permissions are in Info.plist (already configured)
 
-### 7. Run on iOS
-```bash
-npx cap run ios
-```
+### 4. Build & Test on Device
+1. Connect your iPhone with LiDAR (iPhone 12 Pro or newer)
+2. Select your device in Xcode's device dropdown
+3. Click the "Play" button to build and install on your device
+4. On your iPhone, trust the developer certificate: Settings → General → VPN & Device Management
+5. Open the app and test LiDAR scanning
 
-This will open Xcode where you can:
-- Select your iOS device as the target
-- Build and run the app on your device
-- Test the LiDAR scanning functionality
+## Important Notes
+
+- **LiDAR only works on physical devices** - not simulators
+- **Camera permissions** will be requested when you first try to scan
+- **ARKit permissions** are required for 3D scene reconstruction
+- The app will show "LiDAR not supported" on non-LiDAR devices
 
 ## LiDAR Features
 
