@@ -2,11 +2,21 @@ import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Scan, Camera, Download, AlertCircle, StopCircle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { 
+  Scan, 
+  Camera, 
+  Download, 
+  AlertCircle, 
+  StopCircle,
+  Upload,
+  Loader2
+} from "lucide-react";
 import { toast } from "sonner";
 import { Capacitor } from '@capacitor/core';
 import LiDAR from '@/plugins/lidar';
 import { RoomLayout } from './RoomLayout';
+import { uploadFileToStorage, callEdgeFunction } from "@/lib/supabase";
 
 interface LiDARData {
   points: Float32Array;
@@ -43,7 +53,11 @@ interface LiDARData {
 }
 
 interface LiDARScannerProps {
-  onScanComplete?: (scanData: LiDARData) => void;
+  onScanComplete?: (result: {
+    scanData: LiDARData;
+    processedResults?: any;
+    uploadedUrl?: string;
+  }) => void;
 }
 
 export const LiDARScanner = ({ onScanComplete }: LiDARScannerProps = {}) => {
@@ -51,6 +65,10 @@ export const LiDARScanner = ({ onScanComplete }: LiDARScannerProps = {}) => {
   const [scanData, setScanData] = useState<LiDARData | null>(null);
   const [isSupported, setIsSupported] = useState(false);
   const [realTimeData, setRealTimeData] = useState<Partial<LiDARData> | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [processedResults, setProcessedResults] = useState<any>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const liveCanvasRef = useRef<HTMLCanvasElement>(null);
   const cameraRef = useRef<HTMLVideoElement>(null);
@@ -165,7 +183,7 @@ export const LiDARScanner = ({ onScanComplete }: LiDARScannerProps = {}) => {
         
         // Notify parent component
         if (onScanComplete) {
-          onScanComplete(finalScanData);
+          onScanComplete({ scanData: finalScanData });
         }
       }
     } catch (error) {
@@ -407,6 +425,63 @@ export const LiDARScanner = ({ onScanComplete }: LiDARScannerProps = {}) => {
     toast.success("Scan data exported successfully!");
   };
 
+  const uploadAndProcessScan = async () => {
+    if (!scanData) {
+      toast.error("No scan data available to upload");
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Convert scan data to a file
+      const scanBlob = new Blob([JSON.stringify(scanData, null, 2)], {
+        type: 'application/json'
+      });
+      const scanFile = new File([scanBlob], `lidar-scan-${Date.now()}.json`, {
+        type: 'application/json'
+      });
+
+      // Upload scan data to Supabase
+      setUploadProgress(25);
+      const uploadResult = await uploadFileToStorage(scanFile, 'lidar-scans');
+      
+      setUploadProgress(50);
+      setIsUploading(false);
+      setIsProcessing(true);
+
+      // Process the scan data to generate 2D and 3D visualizations
+      const processResult = await callEdgeFunction('process-media', {
+        mediaUrls: [uploadResult.publicUrl],
+        type: 'lidar',
+        processType: 'lidar-processing',
+        scanData: scanData
+      });
+
+      setUploadProgress(100);
+      setIsProcessing(false);
+      setProcessedResults(processResult);
+      
+      toast.success("Scan uploaded and processed successfully!");
+      
+      // Call the parent callback with processed results
+      if (onScanComplete) {
+        onScanComplete({
+          scanData,
+          processedResults: processResult,
+          uploadedUrl: uploadResult.publicUrl
+        });
+      }
+
+    } catch (error) {
+      console.error('Upload/processing error:', error);
+      setIsUploading(false);
+      setIsProcessing(false);
+      toast.error("Failed to upload and process scan: " + (error as Error).message);
+    }
+  };
+
   if (!Capacitor.isNativePlatform()) {
     return (
       <Card>
@@ -480,10 +555,34 @@ export const LiDARScanner = ({ onScanComplete }: LiDARScannerProps = {}) => {
               )}
               
               {scanData && (
-                <Button variant="outline" onClick={exportScanData}>
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
+                <>
+                  <Button 
+                    onClick={uploadAndProcessScan}
+                    disabled={isUploading || isProcessing}
+                    className="flex-1"
+                  >
+                    {isUploading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Uploading...
+                      </>
+                    ) : isProcessing ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4 mr-2" />
+                        Upload & Process
+                      </>
+                    )}
+                  </Button>
+                  <Button variant="outline" onClick={exportScanData}>
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </>
               )}
             </div>
 
@@ -536,6 +635,42 @@ export const LiDARScanner = ({ onScanComplete }: LiDARScannerProps = {}) => {
                         <span className="text-muted-foreground">Area:</span> {realTimeData.roomLayout.totalArea.toFixed(1)}m²
                       </div>
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Upload/Processing Progress */}
+            {(isUploading || isProcessing) && (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span>
+                    {isUploading ? "Uploading scan data..." : "Processing with AI..."}
+                  </span>
+                  <span>{uploadProgress}%</span>
+                </div>
+                <Progress value={uploadProgress} className="w-full" />
+              </div>
+            )}
+
+            {/* Processed Results */}
+            {processedResults && (
+              <div className="space-y-4 p-4 bg-green-50 border border-green-200 rounded-lg">
+                <h4 className="font-medium text-green-800">Processing Complete!</h4>
+                {processedResults.renderedImages && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {processedResults.renderedImages.map((image: string, index: number) => (
+                      <div key={index} className="space-y-2">
+                        <img 
+                          src={image} 
+                          alt={`Processed result ${index + 1}`}
+                          className="w-full h-48 object-cover border border-border rounded-lg"
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          {index === 0 ? '2D Floor Plan' : '3D Visualization'}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

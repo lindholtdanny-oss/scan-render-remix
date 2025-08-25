@@ -9,8 +9,9 @@ const corsHeaders = {
 
 interface ProcessRequest {
   mediaUrls: string[]
-  type: 'exterior' | 'design-ideas' | 'decks'
-  processType: 'exterior-rendering' | 'design-integration' | 'deck-rendering'
+  type: 'exterior' | 'design-ideas' | 'decks' | 'lidar'
+  processType: 'exterior-rendering' | 'design-integration' | 'deck-rendering' | 'lidar-processing'
+  scanData?: any // LiDAR scan data for processing
 }
 
 serve(async (req) => {
@@ -25,7 +26,7 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
-    const { mediaUrls, type, processType }: ProcessRequest = await req.json()
+    const { mediaUrls, type, processType, scanData }: ProcessRequest = await req.json()
 
     if (!mediaUrls || mediaUrls.length === 0) {
       return new Response(
@@ -68,6 +69,9 @@ serve(async (req) => {
     } else if (processType === 'deck-rendering') {
       prompt = `Add beautiful outdoor decks and patios to this house exterior. Based on the uploaded house photos, design and render custom deck additions that complement the architectural style. Include railings, outdoor furniture, and landscaping. Style: Professional architectural visualization, realistic materials, natural lighting.`
       renderedImages = await generateDeckRendering(mediaUrls, prompt)
+    } else if (processType === 'lidar-processing') {
+      prompt = `Generate 2D floor plan and 3D architectural visualization from LiDAR scan data with ${scanData?.metadata?.pointCount || 'unknown'} points. Create accurate floor plans, furniture placement, and design recommendations based on the scanned room layout.`
+      renderedImages = await processLiDARData(mediaUrls, prompt, scanData)
     }
 
     // Update job with results
@@ -190,6 +194,42 @@ async function generateDeckRendering(mediaUrls: string[], prompt: string): Promi
     return renderedImages
   } catch (error) {
     console.error('Deck rendering error:', error)
+    return []
+  }
+}
+
+async function processLiDARData(mediaUrls: string[], prompt: string, scanData: any): Promise<string[]> {
+  try {
+    // This would integrate with AI services for LiDAR processing
+    // - Parse LiDAR point cloud data
+    // - Generate accurate 2D floor plans
+    // - Create 3D architectural visualizations
+    // - Apply design recommendations based on room layout
+    
+    console.log('Processing LiDAR data:', { 
+      mediaUrls, 
+      pointCount: scanData?.metadata?.pointCount,
+      roomType: scanData?.roomLayout?.roomType,
+      wallCount: scanData?.roomLayout?.wallCount,
+      furnitureCount: scanData?.roomLayout?.furnitureCount 
+    })
+    
+    // Simulate complex 3D processing delay
+    await new Promise(resolve => setTimeout(resolve, 5000))
+    
+    // Mock rendered images - in production these would be:
+    // 1. 2D floor plan with accurate measurements
+    // 2. 3D room visualization with detected furniture
+    // 3. Design recommendations based on layout analysis
+    const renderedImages = [
+      'https://images.unsplash.com/photo-1503387762-592deb58ef4e?w=800&h=600&fit=crop', // Floor plan style
+      'https://images.unsplash.com/photo-1631679706909-1844bbd07221?w=800&h=600&fit=crop', // 3D room visualization
+      'https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=800&h=600&fit=crop'  // Design recommendations
+    ]
+    
+    return renderedImages
+  } catch (error) {
+    console.error('LiDAR processing error:', error)
     return []
   }
 }
